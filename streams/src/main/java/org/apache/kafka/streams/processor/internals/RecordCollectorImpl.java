@@ -153,8 +153,16 @@ public class RecordCollectorImpl implements RecordCollector {
             keyBytes = keySerializer.serialize(topic, headers, key);
             valBytes = valueSerializer.serialize(topic, headers, value);
         } catch (final RuntimeException exception) {
-            final String errorMessage = String.format(SEND_EXCEPTION_MESSAGE, topic, taskId, exception.toString());
-            throw new StreamsException(errorMessage, exception);
+            final ProducerRecord unserializedRecord = new ProducerRecord<>(topic, partition, timestamp, key, value, headers);
+            if (productionExceptionHandler.handleSerializationException(unserializedRecord, exception) == ProductionExceptionHandlerResponse.FAIL) {
+                final String errorMessage = String.format(SEND_EXCEPTION_MESSAGE, topic, taskId, exception.toString());
+                throw new StreamsException(errorMessage, exception);
+            } else {
+                log.trace("Exception handler choose to CONTINUE processing in spite of this error but written offsets would not be recorded.");
+                droppedRecordsSensor.record();
+                return;
+            }
+
         }
 
         final ProducerRecord<byte[], byte[]> serializedRecord = new ProducerRecord<>(topic, partition, timestamp, keyBytes, valBytes, headers);

@@ -34,6 +34,14 @@ public interface ProductionExceptionHandler extends Configurable {
     ProductionExceptionHandlerResponse handle(final ProducerRecord<byte[], byte[]> record,
                                               final Exception exception);
 
+    default ProductionExceptionHandlerResponse handleSerializationException(final ProducerRecord record,
+                                                                            final Exception exception) {
+
+        return ProductionExceptionHandlerResponse.FAIL;
+    }
+
+
+
     enum ProductionExceptionHandlerResponse {
         /* continue processing */
         CONTINUE(0, "CONTINUE"),
