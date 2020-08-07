@@ -448,7 +448,7 @@ public class RecordCollectorTest {
             streamsMetrics
         );
 
-        collector.send(topic, "3", "0", null, null, stringSerializer, stringSerializer, streamPartitioner);
+        collector.send(topic, "3", "0", null, null, new CustomErrorSerializer(), new CustomErrorSerializer(), streamPartitioner);
         collector.flush();
 
         final Metric metric = streamsMetrics.metrics().get(new MetricName(
@@ -696,6 +696,13 @@ public class RecordCollectorTest {
                 headers.add(new RecordHeader("value", "value".getBytes()));
             }
             return serialize(topic, data);
+        }
+
+    }
+    private static class CustomErrorSerializer extends StringSerializer {
+        @Override
+        public byte[] serialize(final String topic, final Headers headers, final String data) {
+            throw new RuntimeException();
         }
     }
 }
